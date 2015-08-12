@@ -233,7 +233,6 @@ def fetch_business_listing_links(master_list_name)
 	if File.exist?("#{master_list_name}.csv")
 		browser = Watir::Browser.new :firefox
 		master_data = CSV.read("#{master_list_name}.csv", :headers => true, :encoding => 'windows-1251:utf-8')
-		master_data.headers << "Exception"
 		CSV.open("#{master_list_name}.csv", 'wb', :headers => true) do |csv|
 			csv << master_data.headers
 		end
@@ -241,27 +240,40 @@ def fetch_business_listing_links(master_list_name)
 		master_data.each do |row|
 			puts "URL: #{row['Yelp URL']}"
 			puts row['Yelp URL']
-			begin
-				browser.goto row['Yelp URL']
-				page = Nokogiri::HTML(browser.html)
-				extract_business_info(page, master_list_name, row)
-			rescue Exception => msg
-				puts "Moving on and leaving this row as is"
-				CSV.open("#{master_list_name}.csv", 'a', :headers => true) do |csv|
-					csv << [ row["Ad?"],
-									 row["Company Name"],
-									 row["Stars"],
-									 row["Phone Number"],
-									 row["Yelp URL"],
-									 row["Company URL"],
-									 row["Email"],
-									 row["Street Address"],
-									 row["City"],
-									 row["State"],
-									 row["ZIP"],
-									 msg
-									]
+			if row['Exception'] == "Net::ReadTimeout"
+				puts "Trying again because of ReadTimeout exception"
+			end
+			if row['Company URL'] == "" && (row['Exception'] == "" || row['Exception'] == "Net::ReadTimeout")
+				begin
+					browser.goto row['Yelp URL']
+					page = Nokogiri::HTML(browser.html)
+					extract_business_info(page, master_list_name, row)
+				rescue Exception => msg
+					puts msg
+					puts "Moving on and leaving this row as is"
+					CSV.open("#{master_list_name}.csv", 'a', :headers => true) do |csv|
+						csv << [ row["Ad?"],
+										 row["Company Name"],
+										 row["Stars"],
+										 row["Phone Number"],
+										 row["Yelp URL"],
+										 row["Company URL"],
+										 row["Email"],
+										 row["Street Address"],
+										 row["City"],
+										 row["State"],
+										 row["ZIP"],
+										 msg
+										]
+					end
 				end
+			else
+				if row['Company URL'] != ""
+					puts "Skipping because URL Exists"
+				else
+					puts "Skipping because of #{row['Exception']}"
+				end
+				
 			end
 		end
 		browser.close
@@ -341,8 +353,8 @@ scrape_data_file_name = "yelp_data"
 master_list_file_name = "cosmetic-surgeons-nationwide"
 
 #fetch_links_in_json (scrape_data_file_name)
-#merge_csv(master_list_file_name, scrape_data_file_name )
-#remove_duplicates(master_list_file_name)
+merge_csv(master_list_file_name, scrape_data_file_name )
+remove_duplicates(master_list_file_name)
 fetch_business_listing_links(master_list_file_name)
 #get_emails_from_whois("master_list copy")
 
