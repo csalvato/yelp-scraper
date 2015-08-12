@@ -243,11 +243,39 @@ def fetch_business_listing_links(master_list_name)
 			if row['Exception'] == "Net::ReadTimeout"
 				puts "Trying again because of ReadTimeout exception"
 			end
-			if row['Company URL'] == "" && (row['Exception'] == "" || row['Exception'] == "Net::ReadTimeout")
+			if row['Company URL'] == nil && (row[11] == nil || row[11] == "Net::ReadTimeout") #row 11 is exception
 				begin
-					browser.goto row['Yelp URL']
-					page = Nokogiri::HTML(browser.html)
-					extract_business_info(page, master_list_name, row)
+				  Timeout::timeout(2) do
+				    # perform actions that may hang here
+				    browser.goto row['Yelp URL']
+						page = Nokogiri::HTML(browser.html)
+						extract_business_info(page, master_list_name, row)
+				  end
+				rescue Timeout::Error => msg
+				  puts "Recovered from Timeout"
+				  begin
+				  	browser.send_keys :escape
+				  	page = Nokogiri::HTML(browser.html)
+						extract_business_info(page, master_list_name, row)
+					rescue Exception => msg
+						puts msg
+						puts "Moving on and leaving this row as is"
+						CSV.open("#{master_list_name}.csv", 'a', :headers => true) do |csv|
+							csv << [ row["Ad?"],
+											 row["Company Name"],
+											 row["Stars"],
+											 row["Phone Number"],
+											 row["Yelp URL"],
+											 row["Company URL"],
+											 row["Email"],
+											 row["Street Address"],
+											 row["City"],
+											 row["State"],
+											 row["ZIP"],
+											 msg
+											]
+						end
+					end	
 				rescue Exception => msg
 					puts msg
 					puts "Moving on and leaving this row as is"
@@ -265,13 +293,13 @@ def fetch_business_listing_links(master_list_name)
 										 row["ZIP"],
 										 msg
 										]
-					end
+					end		
 				end
 			else
-				if row['Company URL'] != ""
-					puts "Skipping because URL Exists"
+				if row['Company URL'] != nil
+					puts "Skipping because URL Exists: #{row['Company URL']}"
 				else
-					puts "Skipping because of #{row['Exception']}"
+					puts "Skipping because of #{row[11]}"
 				end
 				
 			end
