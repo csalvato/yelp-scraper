@@ -70,17 +70,25 @@ def fetch_links_in_json output_file_name
 		current_page = 1
 		current_index = (current_page * 10) - 10
 		json_url = json_base_url.gsub("&start=0", "&start=#{current_index}")
-		browser.goto json_url
-		page = Nokogiri::HTML(browser.html)
-		json = JSON.parse(page.search('pre').text)
+		begin
+			browser.goto json_url
+			page = Nokogiri::HTML(browser.html)
+			json = JSON.parse(page.search('pre').text)
+		rescue Exception => msg
+			retry
+		end
 		num_pages = Nokogiri::HTML(json["search_results"]).search('.page-of-pages').text[/(\d+) of (\d+)/,2].to_i
 
 		(current_page .. num_pages).each do
 			puts "Page #{current_page} of #{num_pages}"
 			json_url = json_base_url.gsub("&start=0", "&start=#{current_index}")
+			begin
 			browser.goto json_url
 			page = Nokogiri::HTML(browser.html)
 			json = JSON.parse(page.search('pre').text)
+						rescue Exception => msg
+				retry
+			end
 			results = Nokogiri::HTML(json["search_results"]).search('.search-result')
 			results.each do |result|
 				business_name = result.search('.biz-name').text
