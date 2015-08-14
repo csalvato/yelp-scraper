@@ -75,6 +75,7 @@ def fetch_links_in_json output_file_name
 			page = Nokogiri::HTML(browser.html)
 			json = JSON.parse(page.search('pre').text)
 		rescue Exception => msg
+			puts "Retrying: #{json_url}"
 			retry
 		end
 		num_pages = Nokogiri::HTML(json["search_results"]).search('.page-of-pages').text[/(\d+) of (\d+)/,2].to_i
@@ -86,7 +87,8 @@ def fetch_links_in_json output_file_name
 			browser.goto json_url
 			page = Nokogiri::HTML(browser.html)
 			json = JSON.parse(page.search('pre').text)
-						rescue Exception => msg
+			rescue Exception => msg
+				puts "Retrying: #{json_url}"
 				retry
 			end
 			results = Nokogiri::HTML(json["search_results"]).search('.search-result')
@@ -206,7 +208,7 @@ end
 def fetch_business_listing_links(master_list_name)
 	if File.exist?("#{master_list_name}.csv")
 		browser = Watir::Browser.new :firefox
-		master_data = CSV.read("#{master_list_name}.csv", :headers => true, :encoding => 'windows-1251:utf-8')
+		master_data = CSV.read("#{master_list_name}.csv", :headers => true) #:encoding => 'windows-1251:utf-8')
 		CSV.open("#{master_list_name}.csv", 'wb', :headers => true) do |csv|
 			# csv << master_data.headers #Commented out because of bad yelp_data file.  For new runs, can delete this.
 			csv << ["Ad?",
@@ -381,7 +383,7 @@ puts "Starting Script..."
 scrape_data_file_name = "yelp_data"
 master_list_file_name = "architects-nationwide"
 
-fetch_links_in_json (scrape_data_file_name)
+#fetch_links_in_json (scrape_data_file_name)
 merge_csv(master_list_file_name, scrape_data_file_name )
 remove_duplicates(master_list_file_name)
 fetch_business_listing_links(master_list_file_name)
