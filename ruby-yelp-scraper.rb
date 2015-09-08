@@ -1,20 +1,3 @@
-# How to get this to work:
-#   1) Go to Craigslist.org and find a search query you like in a category.
-#      For example: go to Gigs, filter "paid" and type "Website"
-#   2) Copy the latter part of the URL.  Everything after craigslist.org/.
-# 		 NOTE: Make sure to leave in &format=rss
-#   3) Paste that part of the URL after "link['href']" in the script below
-#   4) Run the script.  This creates output.txt with all the location URLs
-#   5) Paste the text in output.txt into this url:
-#      http://reader.feedshow.com/goodies/opml/OPMLBuilder-create-opml-from-rss-list.php
-#   6) Save the resulting file as an XML file using CTRL+S in browser.
-#   7) Take the file (which is techincally an OPML) and import it into Feedly
-#      NOTE: Before you do this, you may want to change the text "Main Folder"
-#            to something else that will be the category of the Feedly feed.
-#   8) Now you have a feed of all postings in a category!
-#
-# Use this script if you ever need to up
-
 require 'rubygems'
 require 'mechanize'
 require 'nokogiri'
@@ -42,7 +25,7 @@ def fetch_links_in_json output_file_name
 	 					"Exception"]
 	end
 
-	search_string = "architect"
+	search_string = "cpa"
 	json_base_urls = [
 										"http://www.yelp.com/search/snippet?find_desc=#{search_string}&find_loc=10001&&start=0&l=g%3A-73.1651253333618%2C41.369168092075675%2C-74.8130745521118%2C40.12070578072507&parent_request_id=9e5607db6dd417ba&request_origin=hash&bookmark=true", #NY
 										"http://www.yelp.com/search/snippet?find_desc=#{search_string}&find_loc=10001&start=0&l=g%3A-74.1648811927368%2C41.007837130369374%2C-75.8128304114868%2C39.752552985178525&parent_request_id=0d596be3a55733f6&request_origin=hash&bookmark=true", #N NJ
@@ -243,6 +226,13 @@ def fetch_business_listing_links(master_list_name)
 				  puts "Recovered from Timeout"
 				  begin
 				  	sleep(0.5)
+				  	puts "Escape"
+				  	browser.send_keys :escape
+				  	sleep(0.1)
+				  	puts "Escape"
+				  	browser.send_keys :escape
+				  	sleep(0.1)
+				  	puts "Escape"
 				  	browser.send_keys :escape
 				  	page = Nokogiri::HTML(browser.html)
 						extract_business_info(page, master_list_name, row)
@@ -381,9 +371,9 @@ end
 start_time = Time.now
 puts "Starting Script..."
 scrape_data_file_name = "yelp_data"
-master_list_file_name = "architects-nationwide"
+master_list_file_name = "accountants-nationwide"
 
-#fetch_links_in_json (scrape_data_file_name)
+fetch_links_in_json (scrape_data_file_name)
 merge_csv(master_list_file_name, scrape_data_file_name )
 remove_duplicates(master_list_file_name)
 fetch_business_listing_links(master_list_file_name)
